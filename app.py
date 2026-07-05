@@ -9,7 +9,7 @@ from config import Config
 from backup import create_backup, list_backups, cleanup_old_backups
 from restore import restore_backup
 from telegram import upload_backup_to_telegram, download_backup_from_telegram
-from .metadata import record_backup, mark_telegram_uploaded, get_metadata
+from metadata import record_backup, mark_telegram_uploaded, get_metadata
 
 
 app = Flask(__name__)
