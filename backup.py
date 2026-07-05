@@ -6,7 +6,7 @@ import time
 from datetime import datetime
 from urllib.parse import urlparse
 
-from .config import Config
+from config import Config
 
 
 def parse_database_url(url):
