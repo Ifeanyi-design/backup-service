@@ -16,15 +16,19 @@ def _get_api_base():
 
 
 def upload_backup_to_telegram(filepath, caption=None):
-    """Upload a backup file to Telegram channel.
+    """Upload a backup file to Telegram channel."""
 
-    Returns dict with upload status.
-    """
     api_base = _get_api_base()
     chat_id = Config.TELEGRAM_CHAT_ID
 
+    print("=== TELEGRAM UPLOAD START ===")
+    print(f"Bot configured: {bool(Config.TELEGRAM_BOT_TOKEN)}")
+    print(f"Chat ID: {chat_id}")
+    print(f"File: {filepath}")
+
     if not api_base:
         return {"success": False, "error": "TELEGRAM_BOT_TOKEN not configured"}
+
     if not chat_id:
         return {"success": False, "error": "TELEGRAM_CHAT_ID not configured"}
 
@@ -34,10 +38,13 @@ def upload_backup_to_telegram(filepath, caption=None):
     filename = os.path.basename(filepath)
     file_size_mb = os.path.getsize(filepath) / (1024 * 1024)
 
+    print(f"Filename: {filename}")
+    print(f"Size: {file_size_mb:.2f} MB")
+
     if file_size_mb > Config.MAX_BACKUP_SIZE_MB:
         return {
             "success": False,
-            "error": f"File too large: {file_size_mb}MB (max: {Config.MAX_BACKUP_SIZE_MB}MB)",
+            "error": f"File too large ({file_size_mb:.2f} MB)"
         }
 
     if caption is None:
@@ -51,26 +58,44 @@ def upload_backup_to_telegram(filepath, caption=None):
         with open(filepath, "rb") as f:
             resp = requests.post(
                 f"{api_base}/sendDocument",
-                data={"chat_id": chat_id, "caption": caption},
-                files={"document": (filename, f, "application/octet-stream")},
+                data={
+                    "chat_id": chat_id,
+                    "caption": caption,
+                },
+                files={
+                    "document": (filename, f)
+                },
                 timeout=300,
             )
 
-        if resp.status_code == 200:
+        print("Telegram HTTP Status:", resp.status_code)
+        print("Telegram Response:", resp.text)
+
+        if resp.ok:
             data = resp.json()
+
             if data.get("ok"):
+                print("Telegram upload successful.")
+
                 return {
                     "success": True,
                     "message_id": data["result"]["message_id"],
                     "filename": filename,
                 }
 
-        return {"success": False, "error": resp.text}
+        print("Telegram upload failed.")
+
+        return {
+            "success": False,
+            "error": resp.text,
+        }
 
     except Exception as e:
-        return {"success": False, "error": str(e)}
-
-
+        print("Telegram exception:", str(e))
+        return {
+            "success": False,
+            "error": str(e),
+        }
 def download_backup_from_telegram(message_id, download_dir=None):
     """Download a backup file from Telegram by message ID.
 
