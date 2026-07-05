@@ -20,8 +20,6 @@ class Config:
 
     # API security
     API_KEY = os.environ.get("BACKUP_API_KEY", "")
-    if not API_KEY:
-        raise RuntimeError("BACKUP_API_KEY environment variable is required")
 
     # Flask
     SECRET_KEY = os.environ.get("SECRET_KEY", "backup-service-secret")
