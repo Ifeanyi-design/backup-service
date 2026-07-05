@@ -4,8 +4,8 @@ import os
 import subprocess
 import time
 
-from .config import Config
-from .backup import parse_database_url
+from config import Config
+from backup import parse_database_url
 
 
 def restore_backup(filepath):
