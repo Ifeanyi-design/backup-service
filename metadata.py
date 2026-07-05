@@ -5,7 +5,7 @@ import os
 import time
 from datetime import datetime
 
-from .config import Config
+from config import Config
 
 
 METADATA_FILE = "backup_metadata.json"
