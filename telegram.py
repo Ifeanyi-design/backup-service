@@ -4,7 +4,7 @@ import os
 import requests
 from datetime import datetime
 
-from .config import Config
+from config import Config
 
 
 def _get_api_base():
