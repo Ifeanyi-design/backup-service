@@ -145,3 +145,37 @@ def download_backup_from_telegram(message_id, download_dir=None):
 
     except Exception as e:
         return {"success": False, "error": str(e)}
+
+
+def get_latest_telegram_file_id():
+    """Get the file_id of the latest backup message from Telegram channel."""
+    api_base = _get_api_base()
+    chat_id = Config.TELEGRAM_CHAT_ID
+
+    if not api_base or not chat_id:
+        return None
+
+    try:
+        resp = requests.get(
+            f"{api_base}/getUpdates",
+            params={"chat_id": chat_id, "limit": 50},
+            timeout=30,
+        )
+
+        if resp.status_code != 200 or not resp.json().get("ok"):
+            return None
+
+        updates = resp.json().get("result", [])
+        latest_file_id = None
+
+        for update in reversed(updates):
+            msg = update.get("message", {})
+            doc = msg.get("document", {})
+            if doc and doc.get("file_name", "").startswith("maxcinema_backup"):
+                latest_file_id = doc.get("file_id")
+                break
+
+        return latest_file_id
+
+    except Exception:
+        return None

@@ -2,6 +2,7 @@
 
 import functools
 import logging
+import os
 import subprocess
 
 from flask import Flask, request, jsonify
@@ -9,7 +10,7 @@ from flask import Flask, request, jsonify
 from config import Config
 from backup import create_backup, list_backups, cleanup_old_backups
 from restore import restore_backup
-from telegram import upload_backup_to_telegram, download_backup_from_telegram
+from telegram import upload_backup_to_telegram, download_backup_from_telegram, get_latest_telegram_file_id
 from metadata import record_backup, mark_telegram_uploaded, get_metadata
 
 # ---------------------------------------------------------------------
@@ -153,11 +154,24 @@ def restore():
 
     filepath = data.get("filepath")
     message_id = data.get("telegram_message_id")
+    use_latest_telegram = data.get("use_latest_telegram", False)
+    telegram_file_id = data.get("telegram_file_id")
 
-    if not filepath and not message_id:
+    if not filepath and not message_id and not use_latest_telegram and not telegram_file_id:
         return jsonify({
-            "error": "Provide 'filepath' or 'telegram_message_id'"
+            "error": "Provide 'filepath', 'telegram_message_id', 'use_latest_telegram', or 'telegram_file_id'"
         }), 400
+
+    if use_latest_telegram and not filepath:
+        logger.info("Getting latest Telegram file ID...")
+        latest_id = get_latest_telegram_file_id()
+        if not latest_id:
+            return jsonify({"error": "No backups found on Telegram"}), 404
+        message_id = latest_id
+        logger.info("Latest Telegram file ID: %s", message_id)
+
+    if telegram_file_id and not filepath:
+        message_id = telegram_file_id
 
     if message_id and not filepath:
 
@@ -190,6 +204,31 @@ def restore():
     logger.info("Restore completed successfully")
 
     return jsonify(result)
+
+
+@app.route("/upload", methods=["POST"])
+@require_api_key
+def upload():
+    """Upload a backup file to the service."""
+
+    if "file" not in request.files:
+        return jsonify({"error": "No file provided"}), 400
+
+    file = request.files["file"]
+    if not file.filename:
+        return jsonify({"error": "No filename"}), 400
+
+    filename = file.filename
+    filepath = os.path.join(Config.BACKUP_DIR, filename)
+    file.save(filepath)
+
+    logger.info("Backup file uploaded: %s", filename)
+
+    return jsonify({
+        "success": True,
+        "filename": filename,
+        "filepath": filepath,
+    })
 
 
 @app.route("/status", methods=["GET"])
