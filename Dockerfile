@@ -19,4 +19,4 @@ ENV PORT=8080
 
 EXPOSE 8080
 
-CMD PYTHONPATH=/app python3 -m gunicorn --bind 0.0.0.0:${PORT} --workers 2 wsgi:app
+CMD PYTHONPATH=/app python3 -m gunicorn --bind 0.0.0.0:${PORT} --workers 2 --timeout 300 wsgi:app
